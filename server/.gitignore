@@ -33,3 +33,5 @@ build/
 .vscode/
 .env
 FROM_SCRATCH_GUIDE.txt
+business-storefront-feature-guide.txt
+springboot auth ult guide.txt

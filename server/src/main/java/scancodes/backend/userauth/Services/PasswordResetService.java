@@ -1,4 +1,7 @@
 package scancodes.backend.userauth.Services;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
@@ -6,6 +9,7 @@ import java.util.Locale;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import scancodes.backend.config.AppAuthProperties;
 import scancodes.backend.userauth.Entity.AppUserEntity;
 import scancodes.backend.userauth.Repository.UserRepository;
 import scancodes.backend.userauth.Token.PasswordResetToken;
@@ -20,24 +24,31 @@ public class PasswordResetService {
   private final PasswordResetTokenRepository tokenRepository;
   private final PasswordEncoder passwordEncoder;
   private final EmailSender emailSender;
+  private final AppAuthProperties authProperties;
 
   public PasswordResetService(UserRepository userRepository,
                               PasswordResetTokenRepository tokenRepository,
                               PasswordEncoder passwordEncoder,
-                              EmailSender emailSender) {
+                              EmailSender emailSender,
+                              AppAuthProperties authProperties) {
     this.userRepository = userRepository;
     this.tokenRepository = tokenRepository;
     this.passwordEncoder = passwordEncoder;
     this.emailSender = emailSender;
+    this.authProperties = authProperties;
   }
 
   @Transactional
   public void requestReset(String email) {
     var normalizedEmail = email.toLowerCase(Locale.ROOT);
     var userOpt = userRepository.findByEmail(normalizedEmail);
+
     if (userOpt.isEmpty()) {
       return; // Don't reveal if email exists
     }
+
+    var user = userOpt.get();
+    tokenRepository.deleteActiveByUserId(user.getId());
 
     var rawToken = SecureToken.generateUrlSafe(32);
     var tokenHash = SecureToken.sha256Hex(rawToken);
@@ -49,7 +60,7 @@ public class PasswordResetService {
     token.setExpiresAt(Instant.now().plus(Duration.ofMinutes(15)));
     tokenRepository.save(token);
 
-    var link = "https://yourapp/reset-password?token=" + rawToken;
+    var link = "https://auth/reset-password?token=" + rawToken;
     emailSender.send(normalizedEmail, "Reset your password", "Click: " + link);
   }
 
@@ -62,5 +73,10 @@ public class PasswordResetService {
     var user = (AppUserEntity) token.getUser();
     user.setPasswordHash(passwordEncoder.encode(newPassword));
     tokenRepository.save(token);
+
+  Instant now = null;
+  token.markUsed(now);
+  tokenRepository.deleteActiveByUserId(user.getId()); // invalidate other reset links
+  emailSender.send(user.getEmail(), "Password changed", "Your password was changed.");
   }
 }   

@@ -38,7 +38,7 @@ public class AppUserEntity {
   private String passwordHash;
 
   @Column(nullable = false)
-  private boolean enabled; // email verified? (recommended)
+  private boolean enabled; // email verified? 
 
   @ElementCollection(fetch = FetchType.EAGER)
   @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))

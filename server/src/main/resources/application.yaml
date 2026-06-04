@@ -2,6 +2,13 @@ spring:
   application:
     name: server
 
-
   profiles:
     active: dev
+
+app:
+  auth:
+    public-base-url: "http://localhost:8080"
+
+docker:
+  compose:
+    enabled:  false
