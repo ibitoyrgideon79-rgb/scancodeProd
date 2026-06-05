@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
+import { authApi } from '@/lib/api-client';
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -15,24 +16,36 @@ export default function SignUpPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      setError("Passwords do not match!");
       return;
     }
     if (!agreeTerms) {
-      alert("Please agree to the Terms of Service & Privacy Policy");
+      setError("Please agree to the Terms of Service & Privacy Policy");
       return;
     }
-    
-    setIsSubmitted(true);
+
+    setLoading(true);
+    try {
+      await authApi.register(formData.fullName, formData.email, formData.password);
+      setIsSubmitted(true);
+    } catch (err: any) {
+      setError(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Success Screen - Check Email
@@ -83,6 +96,13 @@ export default function SignUpPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Error Message */}
+          {error && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+              {error}
+            </div>
+          )}
+
           {/* Full Name */}
           <div>
             <label className="block text-sm font-medium text-black mb-2">Full Name</label>
@@ -195,9 +215,10 @@ export default function SignUpPage() {
           {/* Create Account Button */}
           <button
             type="submit"
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 rounded-2xl transition-colors text-lg flex items-center justify-center gap-2"
+            disabled={loading}
+            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-4 rounded-2xl transition-colors text-lg disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Create Account →
+            {loading ? 'Creating Account...' : 'Create Account →'}
           </button>
         </form>
 

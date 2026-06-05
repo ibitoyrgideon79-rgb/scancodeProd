@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
-import { saveBusinessProfile } from '@/lib/storeData';
+import { businessApi } from '@/lib/api-client';
 
 const MAX_BUSINESS_IMAGES = 5;
 
@@ -22,6 +22,7 @@ export default function CreateBusinessPage() {
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -72,19 +73,39 @@ export default function CreateBusinessPage() {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      saveBusinessProfile({
+    setError(null);
+
+    try {
+      const businessRequest = {
+        businessType: 'RETAIL',
         name: formData.name.trim(),
         description: formData.description.trim(),
-        phone: formData.phone.trim(),
-        email: formData.email.trim(),
-        bankName: formData.bankName.trim(),
-        accountNumber: formData.accountNumber.trim(),
-        images,
-      });
+        logoUrl: images[0], // Use first image as logo
+        bannerUrl: images[0], // Use first image as banner
+        data: {
+          phone: formData.phone.trim(),
+          email: formData.email.trim(),
+          bankName: formData.bankName.trim(),
+          accountNumber: formData.accountNumber.trim(),
+          images: images,
+        },
+      };
+
+      businessApi.createStorefront(businessRequest)
+        .then((response) => {
+          setLoading(false);
+          // Store business data
+          localStorage.setItem('businessProfile', JSON.stringify(response));
+          router.push('/admin/dashboard');
+        })
+        .catch((err) => {
+          setLoading(false);
+          setError(err.message || 'Failed to create storefront. Please try again.');
+        });
+    } catch (err: any) {
       setLoading(false);
-      router.push('/admin/dashboard');
-    }, 1500);
+      setError(err.message || 'An unexpected error occurred.');
+    }
   };
 
   return (
@@ -98,6 +119,13 @@ export default function CreateBusinessPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Error Message */}
+          {error && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+              {error}
+            </div>
+          )}
+
           {/* Business Branding Upload */}
           <div>
             <label className="block text-sm font-medium text-black mb-2">

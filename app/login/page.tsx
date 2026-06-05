@@ -3,10 +3,49 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { authApi } from '@/lib/api-client';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await authApi.login(email, password);
+      
+      // Store auth token if provided
+      if (response.token) {
+        localStorage.setItem('authToken', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
+      
+      setSuccess('Login successful! Redirecting...');
+      setTimeout(() => {
+        router.push('/admin/dashboard');
+      }, 1500);
+    } catch (err: any) {
+      setError(err.message || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-6">
@@ -26,7 +65,21 @@ export default function LoginPage() {
             <h1 className="text-3xl font-semibold text-black">Log in to ScanCode Account</h1>
           </div>
 
-          <form className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Error Message */}
+            {error && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+                {error}
+              </div>
+            )}
+
+            {/* Success Message */}
+            {success && (
+              <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-600">
+                {success}
+              </div>
+            )}
+
             {/* Email Address */}
             <div>
               <label className="block text-sm font-medium text-black mb-2">
@@ -35,6 +88,8 @@ export default function LoginPage() {
               <input
                 type="email"
                 placeholder="Enter your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:outline-none focus:border-green-600 transition-colors text-black placeholder:text-gray-500"
               />
             </div>
@@ -48,6 +103,8 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:outline-none focus:border-green-600 transition-colors text-black placeholder:text-gray-500 pr-12"
                 />
                 <button
@@ -91,9 +148,10 @@ export default function LoginPage() {
             {/* Login Button */}
             <button
               type="submit"
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 rounded-2xl transition-colors text-lg"
+              disabled={loading}
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-4 rounded-2xl transition-colors text-lg disabled:cursor-not-allowed"
             >
-              Log In
+              {loading ? 'Logging In...' : 'Log In'}
             </button>
           </form>
 
