@@ -5,10 +5,15 @@ spring:
   profiles:
     active: dev
 
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:scancodes;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+
+  docker:
+    compose:
+      enabled: ${SPRING_DOCKER_COMPOSE_ENABLED:false}
+
 app:
   auth:
-    public-base-url: "http://localhost:8080"
-
-docker:
-  compose:
-    enabled:  false
+    public-base-url: ${APP_AUTH_PUBLIC_BASE_URL:http://localhost:8080}

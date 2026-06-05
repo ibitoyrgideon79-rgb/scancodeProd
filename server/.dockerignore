@@ -1,0 +1,14 @@
+.git
+.github
+.idea
+.vscode
+target
+*.iml
+*.iws
+*.ipr
+.env
+*.log
+HELP.md
+Dockerfile
+compose.yaml
+README.md

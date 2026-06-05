@@ -5,6 +5,8 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import jakarta.validation.Valid;
 
 import scancodes.backend.userauth.Services.EmailVerificationService;
 import scancodes.backend.userauth.Services.PasswordResetService;
@@ -62,5 +64,21 @@ public class AuthController {
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
     return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+  }
+
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<Map<String, String>> handleValidationError(MethodArgumentNotValidException ex) {
+    String error = ex.getBindingResult().getFieldErrors().stream()
+      .map(f -> f.getField() + ": " + f.getDefaultMessage())
+      .findFirst()
+      .orElse("Validation failed");
+    return ResponseEntity.badRequest().body(Map.of("error", error));
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+      "error", ex.getMessage() != null ? ex.getMessage() : "Internal server error"
+    ));
   }
 }
