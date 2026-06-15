@@ -1,7 +1,0 @@
-STARTING E2E TESTS
-REGISTER: 400 - {"error":"Username already taken"}
-LOGIN: 200 - {"user":{"username":"testuser","email":"testuser@example.com"},"token":null}
-COOKIE: JSESSIONID=8B846737FA39393A749A2AD40D3428D8
-CREATE STOREFRONT: 500 - {"timestamp":"2026-06-05T11:01:29.950Z","status":500,"error":"Internal Server Error","path":"/api/business/storefronts"}
-PUBLIC STOREFRONT GET: 404 - {"timestamp":"2026-06-05T11:01:29.973Z","status":404,"error":"Not Found","path":"/test-store"}
-E2E TESTS COMPLETE

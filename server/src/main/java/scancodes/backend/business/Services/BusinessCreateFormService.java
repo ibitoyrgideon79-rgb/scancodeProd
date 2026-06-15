@@ -143,6 +143,10 @@ public class BusinessCreateFormService {
         }
     }
 
+    public BusinessStorefrontResponse toPublicResponse(BusinessFormEntities storefront) {
+        return toResponse(storefront);
+    }
+
     private BusinessStorefrontResponse toResponse(BusinessFormEntities storefront) {
         return new BusinessStorefrontResponse(
             storefront.getId(),

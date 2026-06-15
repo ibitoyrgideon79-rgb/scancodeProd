@@ -41,12 +41,12 @@ public class PasswordResetToken {
     private Instant createdAt = Instant.now();
 
     public boolean isValidAt(Instant now) {
-    return usedAt == null && expiresAt.isAfter(now);
-     }
+        return usedAt == null && expiresAt.isAfter(now);
+    }
 
-  public void markUsed(Instant now) {
-    this.usedAt = now;
-  }
+    public void markUsed(Instant now) {
+        this.usedAt = now;
+    }
 
     public PasswordResetToken(String tokenHash, AppUserEntity user, int minutes) {
         this.tokenHash = tokenHash;
@@ -55,35 +55,8 @@ public class PasswordResetToken {
     }
 
     public boolean isUsed() { return usedAt != null; }
-    
-    public boolean isValid() { 
-        return !isUsed() && Instant.now().isBefore(expiresAt); 
-    }
 
-    
-
-    public void setUser(AppUserEntity appUserEntity) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setUser'");
-    }
-
-    public void setTokenHash(String tokenHash2) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setTokenHash'");
-    }
-
-    public void setExpiresAt(Instant plus) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setExpiresAt'");
-    }
-
-    public void setCreatedAt(Instant now) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setCreatedAt'");
-    }
-
-    public Object getUser() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getUser'");
+    public boolean isValid() {
+        return !isUsed() && Instant.now().isBefore(expiresAt);
     }
 }

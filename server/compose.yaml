@@ -6,35 +6,42 @@ services:
     image: scancodes-server:local
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
-      SPRING_DOCKER_COMPOSE_ENABLED: "false"
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/scancodes}
-      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-scancodes}
-      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-scancodes_dev_password}
-      APP_AUTH_PUBLIC_BASE_URL: ${APP_AUTH_PUBLIC_BASE_URL:-http://localhost:8080}
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      SPRING_DOCKER_COMPOSE_ENABLED: "true"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-scancodes}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-scancodes}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-scancodes_dev_password}
+      APP_AUTH_PUBLIC_BASE_URL: ${APP_AUTH_PUBLIC_BASE_URL:-http://localhost:8082}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      JWT_SECRET: ${JWT_SECRET:-devDefaultSecretKeyThatIsAtLeast256BitsLongForHS256Algorithm0123456789}
+      ZEPTOMAIL_SMTP_HOST: ${ZEPTOMAIL_SMTP_HOST:-}
+      ZEPTOMAIL_SMTP_PORT: ${ZEPTOMAIL_SMTP_PORT:-587}
+      ZEPTOMAIL_SMTP_USERNAME: ${ZEPTOMAIL_SMTP_USERNAME:-emailapikey}
+      ZEPTOMAIL_SMTP_PASSWORD: ${ZEPTOMAIL_SMTP_PASSWORD:-}
+      ZEPTOMAIL_FROM_ADDRESS: ${ZEPTOMAIL_FROM_ADDRESS:-noreply@scancode.ng}
+      ZEPTOMAIL_FROM_NAME: ${ZEPTOMAIL_FROM_NAME:-ScanCode}
     ports:
-      - "8080:8080"
+      - "8082:8082"
     depends_on:
       postgres:
         condition: service_healthy
 
   postgres:
-    image: postgres:17-alpine
+    image: postgres:16-alpine
+    container_name: scancode_postgres
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-scancodes}
       POSTGRES_USER: ${POSTGRES_USER:-scancodes}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scancodes_dev_password}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U scancodes -d scancodes"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-scancodes}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  postgres-data:
+  pgdata:

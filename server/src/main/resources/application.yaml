@@ -1,19 +1,72 @@
 spring:
   application:
-    name: server
+    name: scancode-server
+
+  config:
+    import: optional:file:.env[.properties]
 
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:dev}
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:scancodes;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH}
     username: ${SPRING_DATASOURCE_USERNAME:sa}
     password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
 
   docker:
     compose:
       enabled: ${SPRING_DOCKER_COMPOSE_ENABLED:false}
 
+  mail:
+    host: ${ZEPTOMAIL_SMTP_HOST:}
+    port: ${ZEPTOMAIL_SMTP_PORT:587}
+    username: ${ZEPTOMAIL_SMTP_USERNAME:emailapikey}
+    password: ${ZEPTOMAIL_SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: smtp.zeptomail.com
+
 app:
   auth:
-    public-base-url: ${APP_AUTH_PUBLIC_BASE_URL:http://localhost:8080}
+    public-base-url: ${APP_AUTH_PUBLIC_BASE_URL:http://localhost:8082}
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+
+zeptomail:
+  from-address: ${ZEPTOMAIL_FROM_ADDRESS:noreply@scancode.ng}
+  from-name: ${ZEPTOMAIL_FROM_NAME:ScanCode}
+
+jwt:
+  secret: ${JWT_SECRET:devDefaultSecretKeyThatIsAtLeast256BitsLongForHS256Algorithm0123456789}
+  expiration-ms: 86400000
+
+server:
+  port: 8082

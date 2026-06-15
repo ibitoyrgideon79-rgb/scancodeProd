@@ -14,7 +14,7 @@ import scancodes.backend.userauth.Entity.AppUserEntity;
 import scancodes.backend.userauth.Repository.UserRepository;
 import scancodes.backend.userauth.Token.PasswordResetToken;
 import scancodes.backend.userauth.Token.PasswordResetTokenRepository;
-import scancodes.backend.userauth.Token.SecureToken;    
+import scancodes.backend.userauth.Token.SecureToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 
@@ -54,29 +54,29 @@ public class PasswordResetService {
     var tokenHash = SecureToken.sha256Hex(rawToken);
 
     var token = new PasswordResetToken();
-    token.setUser(userOpt.get());
+    token.setUser(user);
     token.setTokenHash(tokenHash);
     token.setCreatedAt(Instant.now());
     token.setExpiresAt(Instant.now().plus(Duration.ofMinutes(15)));
     tokenRepository.save(token);
 
-    var link = "https://auth/reset-password?token=" + rawToken;
+    var encoded = URLEncoder.encode(rawToken, StandardCharsets.UTF_8);
+    var link = authProperties.buildUrl("/auth/reset-password?token=" + encoded);
     emailSender.send(normalizedEmail, "Reset your password", "Click: " + link);
   }
 
   @Transactional
   public void resetPassword(String rawToken, String newPassword) {
     var tokenHash = SecureToken.sha256Hex(rawToken);
-    var token = tokenRepository.findValid(tokenHash, Instant.now())
-      .orElseThrow(() -> new IllegalArgumentException("Invalid token"));
+    var now = Instant.now();
+    var token = tokenRepository.findValid(tokenHash, now)
+      .orElseThrow(() -> new IllegalArgumentException("Invalid or expired reset token"));
 
-    var user = (AppUserEntity) token.getUser();
+    var user = token.getUser();
     user.setPasswordHash(passwordEncoder.encode(newPassword));
-    tokenRepository.save(token);
 
-  Instant now = null;
-  token.markUsed(now);
-  tokenRepository.deleteActiveByUserId(user.getId()); // invalidate other reset links
-  emailSender.send(user.getEmail(), "Password changed", "Your password was changed.");
+    token.markUsed(now);
+    tokenRepository.deleteActiveByUserId(user.getId());
+    emailSender.send(user.getEmail(), "Password changed", "Your password was changed successfully.");
   }
-}   
+}

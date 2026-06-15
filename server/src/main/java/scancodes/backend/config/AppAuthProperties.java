@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "app.auth")
 public class AppAuthProperties {
-  private String publicBaseUrl = "http://localhost:8080";
+  private String publicBaseUrl = "http://localhost:8082";
 
   public String getPublicBaseUrl() {
     return publicBaseUrl;

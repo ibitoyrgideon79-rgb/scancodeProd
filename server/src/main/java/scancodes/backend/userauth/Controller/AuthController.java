@@ -5,37 +5,51 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import jakarta.validation.Valid;
 
-import scancodes.backend.userauth.Services.EmailVerificationService;
+import scancodes.backend.userauth.Services.OtpVerificationService;
 import scancodes.backend.userauth.Services.PasswordResetService;
 import scancodes.backend.userauth.Services.UserService;
 import scancodes.backend.userauth.dtos.ForgotPasswordRequest;
 import scancodes.backend.userauth.dtos.RegisterRequest;
+import scancodes.backend.userauth.dtos.ResendOtpRequest;
 import scancodes.backend.userauth.dtos.ResetPasswordRequest;
+import scancodes.backend.userauth.dtos.VerifyOtpRequest;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
   private final UserService userService;
   private final PasswordResetService passwordResetService;
-  private final EmailVerificationService emailVerificationService;
+  private final OtpVerificationService otpVerificationService;
 
   public AuthController(UserService userService,
                         PasswordResetService passwordResetService,
-                        EmailVerificationService emailVerificationService) {
+                        OtpVerificationService otpVerificationService) {
     this.userService = userService;
     this.passwordResetService = passwordResetService;
-    this.emailVerificationService = emailVerificationService;
+    this.otpVerificationService = otpVerificationService;
   }
 
   @PostMapping("/register")
   public ResponseEntity<Map<String, String>> register(@Valid @RequestBody RegisterRequest request) {
-    userService.register(request.username(), request.email(), request.password());
+    var user = userService.register(request.username(), request.email(), request.password());
+    otpVerificationService.issueOtp(user);
     return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-      "message", "Registration successful. Check your email for verification link."
+      "message", "Registration successful. Enter the verification code sent to your email."
     ));
+  }
+
+  @PostMapping("/verify-otp")
+  public ResponseEntity<Map<String, String>> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
+    otpVerificationService.verifyOtp(request.email(), request.otp());
+    return ResponseEntity.ok(Map.of("message", "Email verified successfully. You can now log in."));
+  }
+
+  @PostMapping("/resend-otp")
+  public ResponseEntity<Map<String, String>> resendOtp(@Valid @RequestBody ResendOtpRequest request) {
+    otpVerificationService.resendOtp(request.email());
+    return ResponseEntity.ok(Map.of("message", "A new verification code has been sent to your email."));
   }
 
   @PostMapping("/forgot-password")
@@ -53,32 +67,5 @@ public class AuthController {
     }
     passwordResetService.resetPassword(request.token(), request.newPassword());
     return ResponseEntity.ok(Map.of("message", "Password reset successful"));
-  }
-
-  @GetMapping("/verify")
-  public ResponseEntity<Map<String, String>> verifyEmail(@RequestParam("token") String token) {
-    emailVerificationService.verifyEmail(token);
-    return ResponseEntity.ok(Map.of("message", "Email verified successfully"));
-  }
-
-  @ExceptionHandler(IllegalArgumentException.class)
-  public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
-    return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
-  }
-
-  @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<Map<String, String>> handleValidationError(MethodArgumentNotValidException ex) {
-    String error = ex.getBindingResult().getFieldErrors().stream()
-      .map(f -> f.getField() + ": " + f.getDefaultMessage())
-      .findFirst()
-      .orElse("Validation failed");
-    return ResponseEntity.badRequest().body(Map.of("error", error));
-  }
-
-  @ExceptionHandler(Exception.class)
-  public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-      "error", ex.getMessage() != null ? ex.getMessage() : "Internal server error"
-    ));
   }
 }

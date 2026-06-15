@@ -24,7 +24,7 @@ public class DatabaseUserDetailsService implements UserDetailsService {
       .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     
     if (!user.isEnabled()){
-        throw new DisabledException("Email not verified");
+        throw new DisabledException("Account not verified. Please enter the OTP sent to your email.");
     }
     
     var authorities = user.getRoles().stream()
